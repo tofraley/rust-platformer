@@ -41,9 +41,9 @@ async fn main() {
 }
 
 async fn load_map() -> tiled::Map {
-    let tileset = load_texture("examples/tileset.png").await.unwrap();
+    let tileset = load_texture("assets/tileset.png").await.unwrap();
     tileset.set_filter(FilterMode::Nearest);
-    let tiled_map_json = load_string("examples/map.json").await.unwrap();
+    let tiled_map_json = load_string("assets/map.json").await.unwrap();
     return tiled::load_map(&tiled_map_json, &[("tileset.png", tileset)], &[]).unwrap();
 }
 
@@ -141,20 +141,20 @@ fn update_player(world: &mut World, player: &mut Player, enemy: &Enemy) {
     player.speed.y = clamp(player.speed.y, -500., 200.);
 
     // debug ui
-    let debug_text = format!(
-        "player: stance: {:?}, jumps left: {}, pos: {}",
-        player.stance, player.jumps_left, player_pos
-    );
-    draw_text_ex(
-        &debug_text,
-        40.0,
-        16.0,
-        TextParams {
-            font_size: 12,
-            font_scale: 0.5,
-            ..Default::default()
-        },
-    );
+    //let debug_text = format!(
+    //    "player: stance: {:?}, jumps left: {}, pos: {}",
+    //    player.stance, player.jumps_left, player_pos
+    //);
+    //draw_text_ex(
+    //    &debug_text,
+    //    40.0,
+    //    16.0,
+    //    TextParams {
+    //        font_size: 12,
+    //        font_scale: 0.5,
+    //        ..Default::default()
+    //    },
+    //);
 
     world.move_h(player.collider, player.speed.x * get_frame_time());
     world.move_v(player.collider, player.speed.y * get_frame_time());
@@ -170,17 +170,17 @@ fn update_enemy(world: &mut World, enemy: &mut Enemy) {
     if enemy.speed.x < -1. && pos.x <= left_bound {
         enemy.speed.x *= -1.;
     }
-    let debug_text = format!("enemy pos: {}", pos);
-    draw_text_ex(
-        &debug_text,
-        40.0,
-        20.0,
-        TextParams {
-            font_size: 12,
-            font_scale: 0.5,
-            ..Default::default()
-        },
-    );
+    //let debug_text = format!("enemy pos: {}", pos);
+    //draw_text_ex(
+    //    &debug_text,
+    //    40.0,
+    //    20.0,
+    //    TextParams {
+    //        font_size: 12,
+    //        font_scale: 0.5,
+    //        ..Default::default()
+    //    },
+    //);
 
     world.move_h(enemy.collider, enemy.speed.x * get_frame_time());
     world.move_v(enemy.collider, enemy.speed.y * get_frame_time());
