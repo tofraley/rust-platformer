@@ -1,5 +1,5 @@
+use crate::world::*;
 use macroquad::prelude::*;
-use macroquad_platformer::*;
 
 pub struct Platform {
   pub collider: Solid,

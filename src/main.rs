@@ -1,13 +1,15 @@
 use macroquad::prelude::*;
-use macroquad_platformer::*;
+//use macroquad_platformer::*;
 use macroquad_tiled as tiled;
 
 mod enemy;
 mod platform;
 mod player;
+pub mod world;
 use enemy::*;
 use platform::*;
 use player::*;
+use world::*;
 
 #[macroquad::main("Platformer")]
 async fn main() {
@@ -30,10 +32,14 @@ async fn main() {
         tiled_map.draw_tiles("main layer", Rect::new(0.0, 0.0, 320.0, 152.0), None);
         draw_platform(&world, &tiled_map, &platform);
         draw_player(&world, &tiled_map, &player);
+        println!("drawing enemy");
         draw_enemy(&world, &tiled_map, &enemy);
-
-        update_player(&mut world, &mut player, &enemy);
+        println!("after drawing enemy");
+        println!("updating player");
+        update_player(&mut world, &mut player, &mut enemy);
+        println!("after updating player");
         update_enemy(&mut world, &mut enemy);
+        println!("After update_enemy");
         update_platform(&mut world, &mut platform);
 
         next_frame().await
@@ -81,6 +87,9 @@ fn draw_player(world: &World, map: &tiled::Map, player: &Player) {
 }
 
 fn draw_enemy(world: &World, map: &tiled::Map, enemy: &Enemy) {
+    if enemy.health <= 0 {
+        return;
+    }
     // sprite id from tiled
     const ENEMY_SPRITE: u32 = 120;
 
@@ -96,25 +105,44 @@ fn draw_enemy(world: &World, map: &tiled::Map, enemy: &Enemy) {
     }
 }
 
-fn update_player(world: &mut World, player: &mut Player, enemy: &Enemy) {
-    let player_pos = world.actor_pos(player.collider);
-    let enemy_pos = world.actor_pos(enemy.collider);
-    let (player_x, player_y) = player_pos.into();
-    let (enemy_x, enemy_y) = enemy_pos.into();
-    let player_rect = Rect::new(player_x, player_y, 8., 8.);
-    let enemy_rect = Rect::new(enemy_x, enemy_y, 8., 8.);
-    let overlapping = player_rect.overlaps(&enemy_rect);
-    if overlapping {
-        player.speed.y = -120.;
+fn update_player(world: &mut World, player: &mut Player, enemy: &mut Enemy) {
+    if player.atk_cool_dn > 0. {
+        player.atk_cool_dn -= 1. * get_frame_time();
     }
-    player.stance = Player::transition(&world, &player);
+    let player_pos = world.actor_pos(player.collider);
+    if enemy.health > 0 {
+        let enemy_pos = world.actor_pos(enemy.collider);
+        let (player_x, player_y) = player_pos.into();
+        let (enemy_x, enemy_y) = enemy_pos.into();
+        let player_rect = Rect::new(player_x, player_y, 8., 8.);
+        let enemy_rect = Rect::new(enemy_x, enemy_y, 8., 8.);
+        let overlapping = player_rect.overlaps(&enemy_rect);
+        if overlapping {
+            // attacking if cooldown is 0
+            if player.atk_cool_dn <= 0. {
+                enemy.health -= 1;
+                if enemy.health <= 0 {
+                    println!("Player at index {:?}", player.collider);
+                    println!("Removing enemy at index {:?}", enemy.collider);
+                    world.remove_actor(enemy.collider);
+                }
+                player.atk_cool_dn = ATK_COOL_DN;
+            }
+            player.speed.y = -120.;
+        }
+    }
+    player.stance = Player::transition(world, player);
 
     if is_key_down(RIGHT_INPUT) {
-        player.speed.x = 100.0;
+        player.speed.x += 10.0;
     } else if is_key_down(LEFT_INPUT) {
-        player.speed.x = -100.0;
+        player.speed.x -= 10.0;
     } else {
-        player.speed.x = 0.;
+        if player.speed.x < 10.0 && player.speed.x > -10.0 {
+            player.speed.x = 0.;
+        } else {
+            player.speed.x *= 0.5;
+        }
     }
 
     match &player.stance {
@@ -139,28 +167,31 @@ fn update_player(world: &mut World, player: &mut Player, enemy: &Enemy) {
     }
 
     player.speed.y = clamp(player.speed.y, -500., 200.);
+    player.speed.x = clamp(player.speed.x, -100., 100.);
 
-    // debug ui
-    //let debug_text = format!(
-    //    "player: stance: {:?}, jumps left: {}, pos: {}",
-    //    player.stance, player.jumps_left, player_pos
-    //);
-    //draw_text_ex(
-    //    &debug_text,
-    //    40.0,
-    //    16.0,
-    //    TextParams {
-    //        font_size: 12,
-    //        font_scale: 0.5,
-    //        ..Default::default()
-    //    },
-    //);
+    //debug ui
+    let debug_text = format!("player: speed: {}", player.speed);
+    draw_text_ex(
+        &debug_text,
+        40.0,
+        16.0,
+        TextParams {
+            font_size: 12,
+            font_scale: 0.5,
+            ..Default::default()
+        },
+    );
 
     world.move_h(player.collider, player.speed.x * get_frame_time());
     world.move_v(player.collider, player.speed.y * get_frame_time());
 }
 
 fn update_enemy(world: &mut World, enemy: &mut Enemy) {
+    println!("Updating enemy {}", enemy.health);
+    if enemy.health <= 0 {
+        println!("enemy dead {}", enemy.health);
+        return;
+    }
     let pos = world.actor_pos(enemy.collider);
     let left_bound = 80.;
     let right_bound = 104.;
@@ -170,17 +201,17 @@ fn update_enemy(world: &mut World, enemy: &mut Enemy) {
     if enemy.speed.x < -1. && pos.x <= left_bound {
         enemy.speed.x *= -1.;
     }
-    //let debug_text = format!("enemy pos: {}", pos);
-    //draw_text_ex(
-    //    &debug_text,
-    //    40.0,
-    //    20.0,
-    //    TextParams {
-    //        font_size: 12,
-    //        font_scale: 0.5,
-    //        ..Default::default()
-    //    },
-    //);
+    let debug_text = format!("enemy hp: {}", enemy.health);
+    draw_text_ex(
+        &debug_text,
+        40.0,
+        20.0,
+        TextParams {
+            font_size: 12,
+            font_scale: 0.5,
+            ..Default::default()
+        },
+    );
 
     world.move_h(enemy.collider, enemy.speed.x * get_frame_time());
     world.move_v(enemy.collider, enemy.speed.y * get_frame_time());
