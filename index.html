@@ -4,13 +4,17 @@
     <meta charset="utf-8">
     <title>Rust Platformer</title>
     <style>
-        html,
-        body,
+        body {
+            background: black;
+            color:white;
+            text-align: center;
+        }
+
         canvas {
             margin: 10px auto 0px auto;
             padding: 0px;
-            width: 90%;
-            height: 90%;
+            width: 80%;
+            height: 80%;
             overflow: hidden;
             background: black;
             z-index: 0;
@@ -20,6 +24,9 @@
 
 <body>
     <canvas id="glcanvas" tabindex='1'></canvas>
+    <p>A - Move Left/Wall-grab Left</p>
+    <p>D - Move Right/Wall-grab Right</p>
+    <p>SPACE - Jump/Double Jump</p>
     <!-- Minified and statically hosted version of https://github.com/not-fl3/macroquad/blob/master/js/mq_js_bundle.js -->
     <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
     <script>load("assets/rust-platformer.wasm");</script> <!-- Your compiled wasm file -->

@@ -2,8 +2,8 @@ use macroquad::prelude::*;
 use macroquad_platformer::*;
 
 pub const MAX_JUMPS: i32 = 2;
-pub const LEFT_INPUT: KeyCode = KeyCode::S;
-pub const RIGHT_INPUT: KeyCode = KeyCode::F;
+pub const LEFT_INPUT: KeyCode = KeyCode::A;
+pub const RIGHT_INPUT: KeyCode = KeyCode::D;
 pub const JUMP_INPUT: KeyCode = KeyCode::Space;
 
 #[derive(Debug)]
