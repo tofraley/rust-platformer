@@ -6,8 +6,9 @@ pub const MAX_JUMPS: i32 = 2;
 pub const LEFT_INPUT: KeyCode = KeyCode::A;
 pub const RIGHT_INPUT: KeyCode = KeyCode::D;
 pub const JUMP_INPUT: KeyCode = KeyCode::Space;
-pub const HANG_TIME: f32 = 0.0;
-pub const ATK_COOL_DN: f32 = 1.;
+pub const HANG_TIME: f32 = 0.05;
+pub const ATTACK_COOLDOWN: f32 = 1.;
+pub const REBOUND_COOLDOWN: f32 = 0.1;
 
 #[derive(Debug)]
 pub struct Player {
@@ -16,7 +17,8 @@ pub struct Player {
   pub speed: Vec2,
   pub jumps_left: i32,
   pub hang_before_cling: f32,
-  pub atk_cool_dn: f32,
+  pub attack_cooldown: f32,
+  pub rebound_cooldown: f32,
 }
 
 impl Player {
@@ -27,7 +29,8 @@ impl Player {
       speed: vec2(0., 0.),
       jumps_left: MAX_JUMPS,
       hang_before_cling: HANG_TIME,
-      atk_cool_dn: 0.,
+      attack_cooldown: 0.,
+      rebound_cooldown: 0.,
     }
   }
 
@@ -72,7 +75,6 @@ impl Player {
       }
       Stance::Clinging(cling_state) => match cling_state {
         Clinging::PreCling => {
-          player.hang_before_cling -= get_frame_time();
           if world.collide_check(player.collider, player_pos + vec2(1., 0.))
             && is_key_down(RIGHT_INPUT)
             && player.hang_before_cling <= 0.0
@@ -92,6 +94,7 @@ impl Player {
         Clinging::Right => {
           if is_key_pressed(JUMP_INPUT) {
             player.speed.x -= 100.;
+            player.rebound_cooldown = REBOUND_COOLDOWN;
             return Stance::InAir(InAir::Jumping);
           } else if world.collide_check(player.collider, player_pos + vec2(1., 0.))
             && is_key_down(RIGHT_INPUT)
@@ -104,6 +107,7 @@ impl Player {
         Clinging::Left => {
           if is_key_pressed(JUMP_INPUT) {
             player.speed.x += 100.;
+            player.rebound_cooldown = REBOUND_COOLDOWN;
             return Stance::InAir(InAir::Jumping);
           } else if world.collide_check(player.collider, player_pos + vec2(-1., 0.))
             && is_key_down(LEFT_INPUT)

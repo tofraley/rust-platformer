@@ -106,8 +106,11 @@ fn draw_enemy(world: &World, map: &tiled::Map, enemy: &Enemy) {
 }
 
 fn update_player(world: &mut World, player: &mut Player, enemy: &mut Enemy) {
-    if player.atk_cool_dn > 0. {
-        player.atk_cool_dn -= 1. * get_frame_time();
+    if player.attack_cooldown > 0. {
+        player.attack_cooldown -= get_frame_time();
+    }
+    if player.rebound_cooldown > 0. {
+        player.rebound_cooldown -= get_frame_time();
     }
     let player_pos = world.actor_pos(player.collider);
     if enemy.health > 0 {
@@ -119,29 +122,27 @@ fn update_player(world: &mut World, player: &mut Player, enemy: &mut Enemy) {
         let overlapping = player_rect.overlaps(&enemy_rect);
         if overlapping {
             // attacking if cooldown is 0
-            if player.atk_cool_dn <= 0. {
+            if player.attack_cooldown <= 0. {
                 enemy.health -= 1;
                 if enemy.health <= 0 {
                     println!("Player at index {:?}", player.collider);
                     println!("Removing enemy at index {:?}", enemy.collider);
                     world.remove_actor(enemy.collider);
                 }
-                player.atk_cool_dn = ATK_COOL_DN;
+                player.attack_cooldown = ATTACK_COOLDOWN;
             }
             player.speed.y = -120.;
         }
     }
     player.stance = Player::transition(world, player);
 
-    if is_key_down(RIGHT_INPUT) {
-        player.speed.x += 10.0;
-    } else if is_key_down(LEFT_INPUT) {
-        player.speed.x -= 10.0;
-    } else {
-        if player.speed.x < 10.0 && player.speed.x > -10.0 {
-            player.speed.x = 0.;
+    if player.rebound_cooldown <= 0. {
+        if is_key_down(RIGHT_INPUT) {
+            player.speed.x = 100.0;
+        } else if is_key_down(LEFT_INPUT) {
+            player.speed.x = -100.0;
         } else {
-            player.speed.x *= 0.5;
+            player.speed.x = 0.;
         }
     }
 
@@ -167,7 +168,7 @@ fn update_player(world: &mut World, player: &mut Player, enemy: &mut Enemy) {
     }
 
     player.speed.y = clamp(player.speed.y, -500., 200.);
-    player.speed.x = clamp(player.speed.x, -100., 100.);
+    //player.speed.x = clamp(player.speed.x, -100., 100.);
 
     //debug ui
     let debug_text = format!("player: speed: {}", player.speed);
